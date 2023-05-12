@@ -14,11 +14,11 @@ open import Data.Product as Prod using (_,_; _×_; uncurry; <_,_>)
 open import Data.Maybe.Base using (just)
 open import Data.Maybe.Relation.Binary.Connected
   using (Connected; just; just-nothing)
-open import Function.Base using (id; _∘_)
+open import Function.Base using (id; _∘_; flip)
 open import Level using (Level; _⊔_)
 open import Relation.Binary as B using (Rel; _⇒_)
 open import Relation.Binary.Construct.Intersection renaming (_∩_ to _∩ᵇ_)
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Relation.Unary as U renaming (_∩_ to _∩ᵘ_) hiding (_⇒_)
 open import Relation.Nullary using (yes; no)
 open import Relation.Nullary.Decidable as Dec using (map′)
@@ -46,6 +46,9 @@ data Linked (R : Rel A ℓ) : List A → Set (a ⊔ ℓ) where
 
 module _ {R : Rel A p} where
 
+  [_] : ∀ {x y} → R x y → Linked R (x ∷ y ∷ [])
+  [ Rxy ] = Rxy ∷ [-]
+
   head : ∀ {x y xs} → Linked R (x ∷ y ∷ xs) → R x y
   head (Rxy ∷ Rxs) = Rxy
 
@@ -65,6 +68,17 @@ module _ {R : Rel A p} where
          Linked R (x ∷ xs)
   _∷′_ {xs = []}     _  _            = [-]
   _∷′_ {xs = y ∷ xs} (just Rxy) Ryxs = Rxy ∷ Ryxs
+
+  reverseAcc : ∀ {x xs} → Linked R (x ∷ xs) →
+               ∀ {ys}   → Linked (flip R) (x ∷ ys) →
+               Linked R (List.reverseAcc (x ∷ xs) ys)
+  reverseAcc Rxs {[]}    _           = Rxs
+  reverseAcc Rxs {_ ∷ _} (Ryx ∷ Rys) = reverseAcc (Ryx ∷ Rxs) Rys
+
+  reverse : ∀ {xs} → Linked (flip R) xs → Linked R (List.reverse xs)
+  reverse []          = []
+  reverse [-]         = [-]
+  reverse (Ryx ∷ Rxs) = reverseAcc [ Ryx ] Rxs
 
 module _ {R : Rel A p} {S : Rel A q} where
 
